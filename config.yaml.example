@@ -1,0 +1,46 @@
+# config.yaml.example
+# Copy this file to config.yaml and fill in real values.
+# config.yaml is gitignored and must never be committed.
+
+agency_name: "Your Agency Name"
+logo_url: "https://your-cdn.com/logo.png"
+
+# Brand colors
+color_primary:        "#FF120A"
+color_primary_hover:  "#960502"
+color_primary_deep:   "#550A04"
+color_bg_dark:        "#370E08"
+color_text_body:      "#36454F"
+color_text_light:     "#FFFFFF"
+
+currency_symbol: "$"
+
+follow_up_warning_days: 3
+
+deal_stages:
+  - New Lead
+  - Contacted
+  - Proposal Sent
+  - Negotiating
+  - Won
+  - Lost
+  - On Hold
+
+service_types:
+  - Web Design
+  - Web App
+  - SEO
+  - Consulting
+  - Landing Page
+  - Other
+
+lead_sources:
+  - Website
+  - Referral
+  - LinkedIn
+  - Cold Outreach
+  - Other
+
+# Auth: list of emails allowed to log in
+allowed_emails:
+  - you@youragency.com
