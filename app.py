@@ -72,6 +72,7 @@ app = dash.Dash(
     external_stylesheets=[
         dbc.themes.BOOTSTRAP,
         'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+        'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
     ],
     title=CONFIG.get('agency_name', 'EtherealCRM') + ' CRM',
     meta_tags=[
@@ -140,7 +141,7 @@ def login_layout():
                         n_submit=0,
                     ),
                     html.Button(
-                        '🔐  Sign In',
+                        [html.I(className='bi bi-lock-fill me-2'), 'Sign In'],
                         id='login-submit-btn',
                         className='btn-primary',
                         style={'width': '100%', 'padding': '11px',

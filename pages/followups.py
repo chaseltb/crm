@@ -7,6 +7,7 @@ import dash
 from dash import html, dcc, callback, Input, Output, State, no_update
 import dash_bootstrap_components as dbc
 from db import crud
+from components.skeletons import empty_state
 import yaml
 import os
 from datetime import date, timedelta
@@ -33,9 +34,15 @@ def layout():
         rows = html.Div(
             className='empty-state',
             children=[
-                html.Div("🎉", className='empty-state-icon'),
-                html.Div("No Follow-ups Due", className='empty-state-title'),
-                html.Div("Great job! All active deals have follow-up schedules in the future.", className='empty-state-text')
+                html.Div(html.I(className='bi bi-check2-all',
+                                style={'fontSize': '40px', 'color': '#22c55e'}),
+                         className='empty-state-icon'),
+                html.Div("You're all caught up!", className='empty-state-title'),
+                html.Div("No deals require follow-up within your warning window. Time to prospect.",
+                         className='empty-state-text'),
+                dcc.Link([html.I(className='bi bi-funnel me-2'), "View Pipeline"],
+                         href='/pipeline', className='btn btn-secondary mt-3',
+                         style={'display': 'inline-flex', 'alignItems': 'center'})
             ]
         )
     else:
@@ -75,13 +82,13 @@ def layout():
                         # Column 5: Action buttons
                         html.Div([
                             html.Button(
-                                "💤 Snooze", 
-                                id={'type': 'snooze-btn', 'index': d['deal_id']}, 
+                                [html.I(className='bi bi-clock me-1'), "Snooze"],
+                                id={'type': 'snooze-btn', 'index': d['deal_id']},
                                 className='btn-secondary btn-sm me-2'
                             ),
                             html.Button(
-                                "📞 Mark Contacted", 
-                                id={'type': 'contacted-btn', 'index': d['deal_id']}, 
+                                [html.I(className='bi bi-telephone-fill me-1'), "Mark Contacted"],
+                                id={'type': 'contacted-btn', 'index': d['deal_id']},
                                 className='btn-primary btn-sm'
                             )
                         ], style={'display': 'flex', 'alignItems': 'center'})
@@ -103,9 +110,9 @@ def layout():
                     dcc.Dropdown(
                         id='c-method',
                         options=[
-                            {'label': '📞 Outbound Call', 'value': 'Call'},
-                            {'label': '✉️ Email Sent', 'value': 'Email'},
-                            {'label': '🤝 Meeting Held', 'value': 'Meeting'}
+                            {'label': 'Outbound Call', 'value': 'Call'},
+                            {'label': 'Email Sent', 'value': 'Email'},
+                            {'label': 'Meeting Held', 'value': 'Meeting'}
                         ],
                         value='Call',
                         clearable=False,
@@ -176,9 +183,15 @@ def refresh_followups_list(refresh):
         return html.Div(
             className='empty-state',
             children=[
-                html.Div("🎉", className='empty-state-icon'),
-                html.Div("No Follow-ups Due", className='empty-state-title'),
-                html.Div("Great job! All active deals have follow-up schedules in the future.", className='empty-state-text')
+                html.Div(html.I(className='bi bi-check2-all',
+                                style={'fontSize': '40px', 'color': '#22c55e'}),
+                         className='empty-state-icon'),
+                html.Div("You're all caught up!", className='empty-state-title'),
+                html.Div("No deals require follow-up within your warning window. Time to prospect.",
+                         className='empty-state-text'),
+                dcc.Link([html.I(className='bi bi-funnel me-2'), "View Pipeline"],
+                         href='/pipeline', className='btn btn-secondary mt-3',
+                         style={'display': 'inline-flex', 'alignItems': 'center'})
             ]
         )
         
@@ -213,13 +226,13 @@ def refresh_followups_list(refresh):
                     ]),
                     html.Div([
                         html.Button(
-                            "💤 Snooze", 
-                            id={'type': 'snooze-btn', 'index': d['deal_id']}, 
+                            [html.I(className='bi bi-clock me-1'), "Snooze"],
+                            id={'type': 'snooze-btn', 'index': d['deal_id']},
                             className='btn-secondary btn-sm me-2'
                         ),
                         html.Button(
-                            "📞 Mark Contacted", 
-                            id={'type': 'contacted-btn', 'index': d['deal_id']}, 
+                            [html.I(className='bi bi-telephone-fill me-1'), "Mark Contacted"],
+                            id={'type': 'contacted-btn', 'index': d['deal_id']},
                             className='btn-primary btn-sm'
                         )
                     ], style={'display': 'flex', 'alignItems': 'center'})

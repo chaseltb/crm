@@ -134,6 +134,46 @@ def soft_delete_contact(contact_id: str) -> None:
         conn.commit()
 
 
+def get_contact_count() -> int:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) as cnt FROM contacts WHERE is_deleted=0"
+        ).fetchone()
+        return row['cnt'] if row else 0
+
+
+def bulk_create_contacts(rows: List[Dict]) -> int:
+    """Insert multiple contacts; returns number successfully inserted."""
+    now = _now()
+    inserted = 0
+    with get_db() as conn:
+        for data in rows:
+            try:
+                conn.execute("""
+                    INSERT INTO contacts
+                      (contact_id, first_name, last_name, company, email, phone,
+                       city, state, source, tags, is_deleted, created_at, updated_at)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,0,?,?)
+                """, (
+                    _uid(),
+                    data.get('first_name', ''),
+                    data.get('last_name', ''),
+                    data.get('company', ''),
+                    data.get('email', ''),
+                    data.get('phone', ''),
+                    data.get('city', ''),
+                    data.get('state', ''),
+                    data.get('source', ''),
+                    data.get('tags', ''),
+                    now, now
+                ))
+                inserted += 1
+            except Exception:
+                pass
+        conn.commit()
+    return inserted
+
+
 def get_open_deal_count_for_contact(contact_id: str) -> int:
     with get_db() as conn:
         row = conn.execute("""
@@ -425,6 +465,72 @@ def get_pipeline_stats() -> Dict:
         'by_stage': rows_to_list(stage_rows),
         'overdue_followups': followup_count,
     }
+
+
+def get_won_revenue_by_month(months: int = 6) -> List[Dict]:
+    """
+    Closed revenue per calendar month for the last `months` months.
+    Uses stage_history so the timestamp reflects when a deal was actually won,
+    not just the deal's updated_at. Fills missing months with 0s.
+    """
+    from datetime import date as _date
+    # Build the expected month labels (YYYY-MM) so gaps are filled with zeros
+    labels = []
+    today = _date.today()
+    for i in range(months - 1, -1, -1):
+        m = today.month - i
+        y = today.year
+        while m <= 0:
+            m += 12
+            y -= 1
+        labels.append(f"{y:04d}-{m:02d}")
+
+    cutoff = labels[0] + '-01'  # first day of the earliest month
+
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT strftime('%Y-%m', sh.changed_at) AS month,
+                   COUNT(DISTINCT sh.deal_id)        AS deals_closed,
+                   COALESCE(SUM(d.value), 0)         AS revenue
+            FROM stage_history sh
+            JOIN deals d ON sh.deal_id = d.deal_id
+            WHERE sh.to_stage = 'Won'
+              AND d.is_deleted = 0
+              AND sh.changed_at >= ?
+            GROUP BY month
+            ORDER BY month
+        """, (cutoff,)).fetchall()
+
+    by_month = {r['month']: dict(r) for r in rows}
+    result = []
+    for lbl in labels:
+        if lbl in by_month:
+            result.append(by_month[lbl])
+        else:
+            result.append({'month': lbl, 'deals_closed': 0, 'revenue': 0.0})
+    return result
+
+
+def get_pipeline_by_source() -> List[Dict]:
+    """
+    Total pipeline value and won revenue per lead source, sorted by total pipeline desc.
+    Only includes non-deleted deals.
+    """
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT
+                COALESCE(NULLIF(TRIM(c.source), ''), 'Unknown') AS source,
+                COUNT(d.deal_id)                                  AS deal_count,
+                COALESCE(SUM(d.value), 0)                         AS total_pipeline,
+                COALESCE(SUM(CASE WHEN d.stage = 'Won' THEN d.value ELSE 0 END), 0) AS won_value
+            FROM contacts c
+            JOIN deals d ON c.contact_id = d.contact_id
+            WHERE d.is_deleted = 0
+            GROUP BY source
+            ORDER BY total_pipeline DESC
+            LIMIT 8
+        """).fetchall()
+    return rows_to_list(rows)
 
 
 def get_followup_deals(warning_days: int = 3) -> List[Dict]:
