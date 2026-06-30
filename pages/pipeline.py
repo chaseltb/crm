@@ -9,17 +9,11 @@ import dash_bootstrap_components as dbc
 from db import crud
 from components.modals import deal_modal, confirm_modal, note_modal
 from components.skeletons import skeleton_table, skeleton_kanban, empty_state
-import yaml
-import os
+from utils.config import load_config
 from datetime import date
 import flask_login
 
 dash.register_page(__name__, path='/pipeline')
-
-def load_config() -> dict:
-    CONFIG_PATH = os.path.join(os.path.dirname(__file__), '..', 'config.yaml')
-    with open(CONFIG_PATH, 'r') as f:
-        return yaml.safe_load(f)
 
 
 def layout(deal_id=None, new_deal=None, contact_id=None, **kwargs):
@@ -102,7 +96,15 @@ def layout(deal_id=None, new_deal=None, contact_id=None, **kwargs):
             )]
         ),
 
-        html.Div(skeleton_kanban(cols=5, cards_per_col=2), id='pipeline-main-container'),
+        html.Div(
+            # Generic loading skeleton shown before the view-store is read
+            html.Div([
+                html.Div(className='skeleton skeleton-text mb-3',
+                         style={'height': '18px', 'width': '160px'}),
+                skeleton_kanban(cols=5, cards_per_col=2),
+            ]),
+            id='pipeline-main-container'
+        ),
 
         dcc.Store(id='deal-init-params', data={'new_deal': new_deal, 'contact_id': contact_id})
     ])
@@ -601,27 +603,35 @@ def update_stage_from_card(stages_val, ids, refresh):
 def toggle_deal_modal(add_clicks, edit_clicks, cancel_clicks, init_params, is_open):
     ctx = dash.callback_context
 
-    if ctx.triggered and ctx.triggered[0]['prop_id'] == 'deal-init-params.data' and init_params:
-        if init_params.get('new_deal') == '1':
+    if not ctx.triggered:
+        return no_update, no_update, no_update, *[no_update]*9
+
+    trigger_id  = ctx.triggered[0]['prop_id']
+    trigger_val = ctx.triggered[0]['value']
+
+    # URL param auto-open (navigating from contacts detail with ?new_deal=1)
+    if trigger_id == 'deal-init-params.data':
+        if isinstance(init_params, dict) and init_params.get('new_deal') == '1':
             return (True,
                     [html.I(className='bi bi-plus-lg me-2'), "Add New Deal"],
                     None, None, init_params.get('contact_id'),
                     None, 'New Lead', None, 50, None, None, None)
-
-    if not ctx.triggered:
         return no_update, no_update, no_update, *[no_update]*9
-
-    trigger_id = ctx.triggered[0]['prop_id']
 
     if 'deal-cancel-btn' in trigger_id:
         return False, no_update, no_update, *[None]*9
 
     if 'add-deal-btn' in trigger_id:
+        if not trigger_val:
+            return no_update, no_update, no_update, *[no_update]*9
         return (True,
                 [html.I(className='bi bi-plus-lg me-2'), "Add New Deal"],
                 None, None, None, None, 'New Lead', None, 50, None, None, None)
 
     if 'edit-deal-btn' in trigger_id:
+        # n_clicks=0 or None means the button was just injected into the DOM — not a real click
+        if not trigger_val:
+            return no_update, no_update, no_update, *[no_update]*9
         try:
             triggered_dict = json.loads(trigger_id.split('.')[0])
             deal_id = triggered_dict.get('index')
@@ -701,6 +711,8 @@ def toggle_delete_modal(delete_clicks, confirm_clicks, cancel_clicks, is_open):
         return False, no_update
 
     if 'delete-deal-btn' in trigger_id:
+        if not ctx.triggered[0]['value']:
+            return no_update, no_update
         try:
             triggered_dict = json.loads(trigger_id.split('.')[0])
             deal_id = triggered_dict.get('index')
