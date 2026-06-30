@@ -8,25 +8,35 @@ from dash import html, dcc, callback, Input, Output, State, no_update
 import dash_bootstrap_components as dbc
 from db import crud
 from components.skeletons import empty_state
-import yaml
-import os
+from utils.config import load_config
 from datetime import date, timedelta
 import flask_login
 
 dash.register_page(__name__, path='/followups')
 
-def load_config() -> dict:
-    CONFIG_PATH = os.path.join(os.path.dirname(__file__), '..', 'config.yaml')
-    with open(CONFIG_PATH, 'r') as f:
-        return yaml.safe_load(f)
+
+def _user_prefs(cfg: dict) -> dict:
+    """Merge config defaults with per-user DB settings (user settings win)."""
+    user = flask_login.current_user
+    if user and user.is_authenticated:
+        prefs = crud.get_user_settings(user.id)
+        return {
+            'warning_days': prefs.get('follow_up_warning_days', cfg.get('follow_up_warning_days', 3)),
+            'currency': prefs.get('currency_symbol', cfg.get('currency_symbol', '$')),
+        }
+    return {
+        'warning_days': cfg.get('follow_up_warning_days', 3),
+        'currency': cfg.get('currency_symbol', '$'),
+    }
 
 # ── Page Layout ───────────────────────────────────────────────────────────────
 
 def layout():
     cfg = load_config()
-    warning_days = cfg.get('follow_up_warning_days', 3)
+    prefs = _user_prefs(cfg)
+    warning_days = prefs['warning_days']
+    currency = prefs['currency']
     deals = crud.get_followup_deals(warning_days)
-    currency = cfg.get('currency_symbol', '$')
     
     # Render the list
     rows = []
@@ -174,9 +184,10 @@ def layout():
 )
 def refresh_followups_list(refresh):
     cfg = load_config()
-    warning_days = cfg.get('follow_up_warning_days', 3)
+    prefs = _user_prefs(cfg)
+    warning_days = prefs['warning_days']
+    currency = prefs['currency']
     deals = crud.get_followup_deals(warning_days)
-    currency = cfg.get('currency_symbol', '$')
     
     rows = []
     if not deals:
@@ -262,8 +273,8 @@ def handle_snooze(snooze_clicks, refresh):
             triggered_dict = json.loads(trigger_id.split('.')[0])
             deal_id = triggered_dict.get('index')
             cfg = load_config()
-            warning_days = cfg.get('follow_up_warning_days', 3)
-            crud.snooze_deal_followup(deal_id, warning_days)
+            prefs = _user_prefs(cfg)
+            crud.snooze_deal_followup(deal_id, prefs['warning_days'])
             return refresh + 1
         except Exception as e:
             print("Error executing snooze action:", e)
