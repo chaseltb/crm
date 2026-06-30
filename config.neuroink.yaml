@@ -1,0 +1,41 @@
+agency_name: NeuroInk
+logo_url: ""
+currency_symbol: "$"
+follow_up_warning_days: 3
+
+color_primary:       "#00b4d8"
+color_primary_hover: "#0096c7"
+color_primary_deep:  "#023e8a"
+color_bg_dark:       "#03045e"
+color_text_body:     "#1e293b"
+color_text_light:    "#caf0f8"
+
+deal_stages:
+  - New Inquiry
+  - Demo Scheduled
+  - Quote Sent
+  - Evaluation
+  - PO Received
+  - Won
+  - Lost
+
+service_types:
+  - Oscilloscope Array
+  - Spectral Analyzer
+  - RF Test Equipment
+  - PCB Fabrication Tools
+  - Calibration Suite
+  - Signal Generator
+  - Power Supply Unit
+  - Custom Integration
+
+lead_sources:
+  - Conference
+  - Website RFQ
+  - Cold Outreach
+  - Partner Referral
+  - LinkedIn
+  - Existing Account
+
+allowed_emails:
+  - demo@neuroink.io

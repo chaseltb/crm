@@ -1,0 +1,41 @@
+agency_name: Heritage Landscaping
+logo_url: ""
+currency_symbol: "$"
+follow_up_warning_days: 4
+
+color_primary:       "#2d6a4f"
+color_primary_hover: "#1b4332"
+color_primary_deep:  "#081c15"
+color_bg_dark:       "#1b4332"
+color_text_body:     "#2d3748"
+color_text_light:    "#ffffff"
+
+deal_stages:
+  - New Lead
+  - Estimate Sent
+  - Proposal Signed
+  - In Progress
+  - Completed
+  - Won
+  - Lost
+
+service_types:
+  - Weekly Maintenance
+  - Spring Cleanup
+  - Fall Cleanup
+  - Irrigation Install
+  - Hardscape Design
+  - Tree & Shrub Service
+  - Sod & Seeding
+  - Snow Removal
+
+lead_sources:
+  - Referral
+  - Google Search
+  - Yard Sign
+  - Direct Mail
+  - Nextdoor
+  - Repeat Customer
+
+allowed_emails:
+  - demo@heritagelandscaping.com

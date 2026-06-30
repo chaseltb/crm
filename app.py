@@ -232,4 +232,4 @@ if __name__ == '__main__':
         run_migration()
 
     port = int(os.environ.get('CRM_PORT', 8050))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=os.environ.get('DEBUG', 'false').lower() == 'true', host='0.0.0.0', port=port)

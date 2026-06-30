@@ -89,6 +89,12 @@ def run_migration():
             changed_at  TEXT NOT NULL
         );
 
+        -- ── User Settings (per-user preferences stored as JSON) ─────
+        CREATE TABLE IF NOT EXISTS user_settings (
+            user_id      TEXT PRIMARY KEY REFERENCES users(user_id),
+            settings_json TEXT NOT NULL DEFAULT '{}'
+        );
+
         -- ── Indexes ─────────────────────────────────────────────────
         CREATE INDEX IF NOT EXISTS idx_deals_contact ON deals(contact_id);
         CREATE INDEX IF NOT EXISTS idx_deals_stage   ON deals(stage);
