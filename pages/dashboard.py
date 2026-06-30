@@ -9,16 +9,9 @@ import plotly.graph_objects as go
 from datetime import date
 from db import crud
 from components.skeletons import empty_state
-import yaml
-import os
+from utils.config import load_config
 
 dash.register_page(__name__, path='/dashboard')
-
-
-def load_config() -> dict:
-    CONFIG_PATH = os.path.join(os.path.dirname(__file__), '..', 'config.yaml')
-    with open(CONFIG_PATH, 'r') as f:
-        return yaml.safe_load(f)
 
 
 # ── Shared chart theme ────────────────────────────────────────────────────────
@@ -28,13 +21,15 @@ _CHART_LAYOUT = dict(
     plot_bgcolor='#ffffff',
     paper_bgcolor='#ffffff',
     font=dict(family='Inter, sans-serif', size=12, color='#374151'),
-    margin=dict(l=48, r=24, t=48, b=40),
     legend=dict(
         orientation='h', yanchor='bottom', y=1.02,
         xanchor='right', x=1,
         font=dict(size=11),
     ),
 )
+# Margin kept separate so each chart can override without a kwarg conflict
+_MARGIN     = dict(l=48,  r=24, t=48, b=40)
+_MARGIN_SRC = dict(l=100, r=24, t=48, b=40)  # source chart needs wider left for labels
 
 _AXIS_BASE = dict(gridcolor='#f3f4f6', linecolor='#e5e7eb')
 
@@ -145,6 +140,7 @@ def layout():
         ),
     ])
     fig_pipeline.update_layout(**_CHART_LAYOUT, height=300, bargap=0.35,
+        margin=_MARGIN,
         title=dict(text='Deals by Stage', font=dict(size=13, color='#1a1a2e')))
     fig_pipeline.update_layout(
         xaxis=dict(**_AXIS_BASE),
@@ -190,6 +186,7 @@ def layout():
             ),
         ])
         fig_revenue.update_layout(**_CHART_LAYOUT, height=300, bargap=0.4,
+            margin=_MARGIN,
             title=dict(text='Won Revenue — Last 6 Months',
                        font=dict(size=13, color='#1a1a2e')))
         fig_revenue.update_layout(
@@ -203,6 +200,7 @@ def layout():
         fig_revenue = go.Figure()
         fig_revenue.update_layout(
             **_CHART_LAYOUT, height=300,
+            margin=_MARGIN,
             title=dict(text='Won Revenue — Last 6 Months',
                        font=dict(size=13, color='#1a1a2e')),
             annotations=[dict(
@@ -246,7 +244,7 @@ def layout():
         ])
         fig_source.update_layout(**_CHART_LAYOUT, height=300,
             barmode='overlay', bargap=0.3,
-            margin=dict(l=100, r=24, t=48, b=40),
+            margin=_MARGIN_SRC,
             title=dict(text='Pipeline by Lead Source',
                        font=dict(size=13, color='#1a1a2e')))
         fig_source.update_layout(
@@ -257,6 +255,7 @@ def layout():
         fig_source = go.Figure()
         fig_source.update_layout(
             **_CHART_LAYOUT, height=300,
+            margin=_MARGIN_SRC,
             title=dict(text='Pipeline by Lead Source',
                        font=dict(size=13, color='#1a1a2e')),
             annotations=[dict(
