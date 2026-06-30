@@ -5,7 +5,6 @@ Run: python app.py
 """
 
 import os
-import yaml
 import flask
 import bcrypt
 import flask_login
@@ -16,16 +15,7 @@ import dash_bootstrap_components as dbc
 
 from components.sidebar import render_sidebar
 from db import crud
-
-# ── Load Config ───────────────────────────────────────────────────────────────
-
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.yaml')
-
-
-def load_config() -> dict:
-    with open(CONFIG_PATH, 'r') as f:
-        return yaml.safe_load(f)
-
+from utils.config import load_config
 
 CONFIG = load_config()
 
@@ -235,11 +225,11 @@ def handle_login(n_clicks, n_submit, email, password):
 # ── Run ───────────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    # Run database migration on startup if db doesn't exist yet
-    db_path = os.path.join(os.path.dirname(__file__), 'data', 'etherealcrm.db')
-    if not os.path.exists(db_path):
+    from db import crud as _crud
+    if not os.path.exists(_crud.DB_PATH):
         print("[app] Database not found — running migration...")
         from db.migrate import run_migration
         run_migration()
 
-    app.run(debug=True, host='0.0.0.0', port=8050)
+    port = int(os.environ.get('CRM_PORT', 8050))
+    app.run(debug=True, host='0.0.0.0', port=port)
