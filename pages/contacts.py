@@ -10,17 +10,11 @@ from db import crud
 from components.modals import contact_modal, confirm_modal, note_modal
 from components.skeletons import skeleton_table, empty_state
 from utils.import_contacts import parse_upload, auto_map, df_to_contact_rows, DISPLAY_NAMES
-import yaml
-import os
+from utils.config import load_config
 from datetime import date
 import flask_login
 
 dash.register_page(__name__, path='/contacts')
-
-def load_config() -> dict:
-    CONFIG_PATH = os.path.join(os.path.dirname(__file__), '..', 'config.yaml')
-    with open(CONFIG_PATH, 'r') as f:
-        return yaml.safe_load(f)
 
 
 def layout(contact_id=None, **kwargs):
@@ -795,6 +789,8 @@ def toggle_note_modal(add_clicks, edit_clicks, cancel_clicks, is_open):
         return True, [html.I(className='bi bi-plus-lg me-2'), "Add Activity Note"], None, 'Internal', '', ''
 
     if 'edit-note-btn' in trigger_id:
+        if not ctx.triggered[0]['value']:
+            return no_update, no_update, no_update, no_update, no_update, no_update
         try:
             triggered_dict = json.loads(trigger_id.split('.')[0])
             note_id = triggered_dict.get('index')
