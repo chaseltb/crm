@@ -6,11 +6,15 @@ Every function opens its own connection so it's safe to call from any Dash callb
 import sqlite3
 import uuid
 import os
+import json
 from datetime import datetime, date, timedelta
 from typing import Optional, List, Dict, Any
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'etherealcrm.db')
-DB_PATH = os.path.abspath(DB_PATH)
+# CRM_DB env var lets demo instances use a separate database file
+DB_PATH = os.environ.get(
+    'CRM_DB',
+    os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'etherealcrm.db'))
+)
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
@@ -41,6 +45,55 @@ def rows_to_list(rows) -> List[Dict]:
 
 
 # ── Auth ─────────────────────────────────────────────────────────────────────
+
+def get_all_users() -> List[Dict]:
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT user_id, email, created_at FROM users ORDER BY created_at"
+        ).fetchall()
+        return rows_to_list(rows)
+
+
+def create_user_account(email: str, password: str) -> str:
+    import bcrypt as _bcrypt
+    uid = _uid()
+    pw_hash = _bcrypt.hashpw(password.encode(), _bcrypt.gensalt()).decode()
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO users (user_id, email, password_hash, created_at) VALUES (?,?,?,?)",
+            (uid, email.lower().strip(), pw_hash, _now())
+        )
+        conn.commit()
+    return uid
+
+
+def delete_user_account(user_id: str) -> None:
+    with get_db() as conn:
+        conn.execute("DELETE FROM user_settings WHERE user_id = ?", (user_id,))
+        conn.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
+        conn.commit()
+
+
+def get_user_settings(user_id: str) -> Dict:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT settings_json FROM user_settings WHERE user_id = ?", (user_id,)
+        ).fetchone()
+        if row:
+            return json.loads(row['settings_json'] or '{}')
+        return {}
+
+
+def save_user_settings(user_id: str, settings: Dict) -> None:
+    blob = json.dumps(settings)
+    with get_db() as conn:
+        conn.execute("""
+            INSERT INTO user_settings (user_id, settings_json)
+            VALUES (?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET settings_json = excluded.settings_json
+        """, (user_id, blob))
+        conn.commit()
+
 
 def get_user_by_email(email: str) -> Optional[Dict]:
     with get_db() as conn:
